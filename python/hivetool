@@ -140,6 +140,8 @@ def print_walk(hive, root, recursive=True):
     folder = hive.lookup(root)
     rootdepth = len(folder.sectionname.split("/"))
 
+    # Iterate through the levels of the hive,
+    # one sub-folder deeper for each iteration
     for (folderpath, params, folders) in _walk(hive, root):
         folder = hive.lookup(folderpath)
         section = folder.sectionname
@@ -150,7 +152,8 @@ def print_walk(hive, root, recursive=True):
         else:
             source = None
 
-        # Print sub-folder name
+        # Unless it's the first iteration - print sub-folder name.
+        # It should be printed above it's contents in recursive mode.
         if folderpath != root:
             foldername = os.path.basename(folderpath)
             foldername = safe_string(foldername)
@@ -165,6 +168,16 @@ def print_walk(hive, root, recursive=True):
             value = safe_string(value)
             sys.stdout.write(" " * indent)
             sys.stdout.write("%s = %s\n" % (param, value))
+
+        if not recursive:
+            # Print sub-folder names without the folder contents
+            for folder in folders:
+                foldername = safe_string(folder)
+                if foldername == "/":
+                    continue
+
+                sys.stdout.write(" " * indent)
+                sys.stdout.write(foldername + "/\n")
 
         if not recursive:
             break
