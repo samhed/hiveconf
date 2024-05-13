@@ -110,14 +110,14 @@ def _walk(hive, folderpath="/"):
         if subname == "/":
             continue
         if folderpath != "/":
-            subname = "/" + subname
+            subname = os.path.join("/", subname)
         subfolder = folderpath + subname
         yield from _walk(hive, subfolder)
 
 def imp_walk(hive, ih):
     for (folderpath, params, folders) in _walk(ih):
         for paramname in params:
-            parampath = folderpath + "/" + paramname
+            parampath = os.path.join(folderpath, paramname)
             value = ih.get_string(parampath)
             #print "setting", parampath, "to", value
             hive.set_string(parampath, value)
@@ -130,7 +130,7 @@ purge_params = []
 def purge_walk(hive, ph):
     for (folderpath, params, folders) in _walk(ph):
         for paramname in params:
-            parampath = folderpath + "/" + paramname
+            parampath = os.path.join(folderpath, paramname)
             if hive.lookup(parampath) != None:
                 # Add to delete-list
                 purge_params.append(parampath)
@@ -140,6 +140,8 @@ def print_walk(hive, root, recursive=True):
     folder = hive.lookup(root)
     rootdepth = len(folder.sectionname.split("/"))
 
+    # Iterate through the levels of the hive,
+    # one sub-folder deeper for each iteration
     for (folderpath, params, folders) in _walk(hive, root):
         folder = hive.lookup(folderpath)
         section = folder.sectionname
@@ -150,7 +152,8 @@ def print_walk(hive, root, recursive=True):
         else:
             source = None
 
-        # Print sub-folder name
+        # Unless it's the first iteration - print sub-folder name.
+        # It should be printed above it's contents in recursive mode.
         if folderpath != root:
             foldername = os.path.basename(folderpath)
             foldername = safe_string(foldername)
@@ -159,12 +162,22 @@ def print_walk(hive, root, recursive=True):
 
         # Print Parameters and values
         for param in params:
-            parampath = folderpath + "/" + param
+            parampath = os.path.join(folderpath, param)
             value = hive.get_string(parampath)
             param = safe_string(param)
             value = safe_string(value)
             sys.stdout.write(" " * indent)
             sys.stdout.write("%s = %s\n" % (param, value))
+
+        if not recursive:
+            # Print sub-folder names without the folder contents
+            for folder in folders:
+                foldername = safe_string(folder)
+                if foldername == "/":
+                    continue
+
+                sys.stdout.write(" " * indent)
+                sys.stdout.write(foldername + "/\n")
 
         if not recursive:
             break
@@ -254,7 +267,11 @@ def main():
     errors = 0
 
     # Try to open root hive
-    hive = hiveconf.open_hive(roothive)
+    try:
+        hive = hiveconf.open_hive(roothive)
+    except hiveconf.SyntaxError as e:
+        print(e, file=sys.stderr)
+        return
 
     # Retrieve parameters to purge from specified files
     for purge_file in purge_files:

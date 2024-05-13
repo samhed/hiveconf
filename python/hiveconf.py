@@ -62,12 +62,13 @@ class ReadOnlySource(Error): pass
 class FolderNotEmpty(Error): pass
     
 class SyntaxError(Error):
-    def __init__(self, url, linenum):
+    def __init__(self, url, linenum, text):
         self.url = url
         self.linenum = linenum
+        self.text = text
 
     def __str__(self):
-        return "Bad line %d in %s" % (self.linenum, self.url)
+        return "Bad line %d in %s: '%s'" % (self.linenum, self.url, self.text)
 
 class UnicodeError(Error):
     def __init__(self, message):
@@ -692,7 +693,7 @@ class _HiveFileParser:
                 except ObjectExistsError:
                     print("Object '%s' already exists" % paramname, file=debugw)
             else:
-                raise SyntaxError(url, linenum)
+                raise SyntaxError(url, linenum, line)
 
 
     def handle_section(self, rootfolder, sectionname, source):
