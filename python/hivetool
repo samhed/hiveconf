@@ -267,7 +267,11 @@ def main():
     errors = 0
 
     # Try to open root hive
-    hive = hiveconf.open_hive(roothive)
+    try:
+        hive = hiveconf.open_hive(roothive)
+    except hiveconf.SyntaxError as e:
+        print(e, file=sys.stderr)
+        return
 
     # Retrieve parameters to purge from specified files
     for purge_file in purge_files:

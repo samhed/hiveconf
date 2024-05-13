@@ -456,6 +456,19 @@ class MainTest(unittest.TestCase):
         self.assertEqual(return_code, 2)
         _print.assert_called_once_with(ANY, file=sys.stderr)
 
+    @patch("hiveconf.SyntaxError", SyntaxError)
+    @patch("hiveconf.open_hive")
+    @patch("hivetool.print")
+    def test_hiveconf_syntax_error(self, _print, open_hive):
+        # Given
+        open_hive.side_effect = SyntaxError
+
+        # When
+        script_main()
+
+        # Then
+        _print.assert_called_once_with(ANY, file=sys.stderr)
+
 
 if "__main__" == __name__:
     unittest.main()
