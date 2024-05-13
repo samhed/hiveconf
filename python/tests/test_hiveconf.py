@@ -1520,7 +1520,7 @@ class HiveFileParserTest(unittest.TestCase):
             self.fail("No exception should be thrown when adding an existing parameter.")
 
         self.assertEqual(result, mock_folder)
-        mock_stderr.assert_not_called()
+        mock_stderr.write.assert_not_called()
 
     @mock.patch("hiveconf.Folder", autospec=True)
     @mock.patch("hiveconf.open", new_callable=mock.mock_open,
