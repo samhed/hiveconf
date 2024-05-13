@@ -214,11 +214,10 @@ class WalkTest(unittest.TestCase):
 
         # Then
         self.assertEqual(return_code, 0)
-        # Hiveconf handles the double slashes with _path2comps()
-        hive_purge.delete.assert_called_once_with("//p2")
+        hive_purge.delete.assert_called_once_with("/p2")
         hive_purge.get_parameters.assert_called_once_with("/")
         self.assertEqual(hive_reduced.lookup.call_args_list,
-                         [ call("//p1"), call("//p2") ])
+                         [ call("/p1"), call("/p2") ])
 
     @patch("hiveconf.open_hive")
     def test_purge_walk_param_in_folder(self, hive):
@@ -269,9 +268,8 @@ class WalkTest(unittest.TestCase):
 
         # Then
         self.assertEqual(return_code, 0)
-        # Hiveconf handles the double slashes with _path2comps()
-        hive.set_string.assert_called_once_with("//p1", "v1")
-        hive_import.get_string.assert_called_once_with("//p1")
+        hive.set_string.assert_called_once_with("/p1", "v1")
+        hive_import.get_string.assert_called_once_with("/p1")
         hive_import.get_parameters.assert_called_once_with("/")
         hive_import.get_folders.assert_called_once_with("/")
 
@@ -322,7 +320,7 @@ class WalkTest(unittest.TestCase):
         self.assertEqual(write_args_str, "p = yay\n")
         hive.get_parameters.assert_called_once_with("/")
         hive.get_folders.assert_called_once_with("/")
-        hive.get_string.assert_called_once_with("//p")
+        hive.get_string.assert_called_once_with("/p")
 
     @patch("hiveconf.open_hive")
     @patch("sys.stdout.write")
@@ -347,6 +345,28 @@ class WalkTest(unittest.TestCase):
                          [ call("/"), call("/f2") ])
         self.assertEqual(hive.get_folders.call_args_list,
                          [ call("/"), call("/f2") ])
+
+    @patch("hiveconf.open_hive")
+    @patch("sys.stdout.write")
+    # Our mocked folder's class need to match hiveconf.Folder
+    @patch("hiveconf.Folder", MagicMock)
+    def test_print_walk_trailing_slash(self, write, open_hive):
+        # Given
+        hive = open_hive.return_value
+        hive.get_string.return_value = "yay"
+        hive.get_parameters.return_value = ["p"]
+        hive.get_folders.return_value = ["f2"]
+        hive.lookup.side_effect = lambda p: MagicMock(sectionname=p.rstrip("/"))
+
+        # When
+        return_code = script_main("-a", "/foo/")
+
+        # Then
+        write_args_str = self.get_args_str(write.call_args_list)
+        self.assertEqual(write_args_str, "p = yay\nf2/\n")
+        hive.get_parameters.assert_called_once_with("/foo/")
+        hive.get_folders.assert_called_once_with("/foo/")
+        hive.get_string.assert_called_once_with("/foo/p")
 
     @patch("hiveconf.open_hive")
     @patch("sys.stdout.write")
@@ -386,7 +406,7 @@ class WalkTest(unittest.TestCase):
         self.assertEqual(write_args_str, "p = ??????\n")
         hive.get_parameters.assert_called_once_with("/")
         hive.get_folders.assert_called_once_with("/")
-        hive.get_string.assert_called_once_with("//p")
+        hive.get_string.assert_called_once_with("/p")
 
     @patch("hiveconf.open_hive")
     @patch("sys.stdout")
@@ -409,7 +429,7 @@ class WalkTest(unittest.TestCase):
         self.assertEqual(write_args_str, "?????? = hurray\n")
         hive.get_parameters.assert_called_once_with("/")
         hive.get_folders.assert_called_once_with("/")
-        hive.get_string.assert_called_once_with("//привет")
+        hive.get_string.assert_called_once_with("/привет")
 
     @patch("hiveconf.open_hive")
     @patch("sys.stdout")
