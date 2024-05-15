@@ -372,6 +372,30 @@ class WalkTest(unittest.TestCase):
     @patch("sys.stdout.write")
     # Our mocked folder's class need to match hiveconf.Folder
     @patch("hiveconf.Folder", MagicMock)
+    def test_print_walk_recursive_trailing_slash(self, write, open_hive):
+        # Given
+        hive = open_hive.return_value
+        hive.get_string.return_value = "yay"
+        hive.get_parameters.side_effect = [[], ["p"]]
+        hive.get_folders.side_effect = [["f2"], []]
+        hive.lookup.side_effect = lambda p: MagicMock(sectionname=p.rstrip("/"))
+
+        # When
+        return_code = script_main("-Ra", "/foo/")
+
+        # Then
+        write_args_str = self.get_args_str(write.call_args_list)
+        self.assertEqual(write_args_str, "f2/\n    p = yay\n")
+        hive.get_string.assert_called_once_with("/foo/f2/p")
+        self.assertEqual(hive.get_parameters.call_args_list,
+                         [ call("/foo/"), call("/foo/f2") ])
+        self.assertEqual(hive.get_folders.call_args_list,
+                         [ call("/foo/"), call("/foo/f2") ])
+
+    @patch("hiveconf.open_hive")
+    @patch("sys.stdout.write")
+    # Our mocked folder's class need to match hiveconf.Folder
+    @patch("hiveconf.Folder", MagicMock)
     def test_print_walk_ignore_slash_subfolders(self, write, open_hive):
         # Given
         hive = open_hive.return_value

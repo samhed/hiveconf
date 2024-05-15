@@ -109,9 +109,7 @@ def _walk(hive, folderpath="/"):
     for subname in folders:
         if subname == "/":
             continue
-        if folderpath != "/":
-            subname = os.path.join("/", subname)
-        subfolder = folderpath + subname
+        subfolder = os.path.join(folderpath, subname)
         yield from _walk(hive, subfolder)
 
 def imp_walk(hive, ih):
